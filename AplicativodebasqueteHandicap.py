@@ -3,8 +3,14 @@ import math
 
 st.set_page_config(page_title="Bot de Handicap - Basquete Real", layout="centered")
 
-st.title("🏀 Bot de Handicap - Basquete ao Vivo (com estatísticas)")
-st.markdown("Preencha os dados da partida e receba uma sugestão de aposta com chance estimada de cobertura.")
+st.title("🏀 Bot de Handicap - Basquete ao Vivo (com projeção de jogo completo)")
+st.markdown("Preencha os dados da partida e receba uma sugestão sólida de aposta baseada na projeção do placar final.")
+
+# Quarto atual
+st.subheader("⏱️ Quarto Atual")
+quarto_atual = st.selectbox("Estamos em qual quarto?", [1, 2, 3, 4], index=1)
+quartos_jogados = quarto_atual
+quartos_restantes = 4 - quartos_jogados
 
 # Entradas de pontuação por quarto
 st.subheader("📊 Pontos por Quarto - Time A e Time B")
@@ -53,9 +59,14 @@ if st.button("🎯 Gerar Sugestão de Aposta"):
     total_B = sum(pontos_B)
     diff = total_A - total_B
 
-    # Cálculo da margem real
-    margem_A = (total_A + hA) - total_B
-    margem_B = (total_B + hB) - total_A
+    # Projeção do placar final
+    media_diff_por_quarto = diff / quartos_jogados if quartos_jogados > 0 else 0
+    projecao_diff = diff + media_diff_por_quarto * quartos_restantes
+    projecao_final_A = total_A + (media_diff_por_quarto * quartos_restantes / 2)
+    projecao_final_B = total_B - (media_diff_por_quarto * quartos_restantes / 2)
+
+    margem_proj_A = (projecao_final_A + hA) - projecao_final_B
+    margem_proj_B = (projecao_final_B + hB) - projecao_final_A
 
     def parse_fg(fg_text):
         try:
@@ -64,13 +75,11 @@ if st.button("🎯 Gerar Sugestão de Aposta"):
         except:
             return 0
 
-    # Estatísticas convertidas
     fg_pct_a = parse_fg(fg_a)
     fg_pct_b = parse_fg(fg_b)
     fg3_pct_a = parse_fg(fg3_a)
     fg3_pct_b = parse_fg(fg3_b)
 
-    # Índice de performance
     def performance(fg, fg3, reb, tov):
         return (0.4 * fg) + (0.2 * fg3) + (0.2 * reb) - (0.2 * tov)
 
@@ -78,28 +87,28 @@ if st.button("🎯 Gerar Sugestão de Aposta"):
     perf_b = performance(fg_pct_b, fg3_pct_b, reb_b, tov_b)
     perf_diff = perf_a - perf_b
 
-    # Chance de cobertura baseada na margem e performance
     def sigmoide(x):
         return 1 / (1 + math.exp(-x))
 
-    chance_A = sigmoide((perf_diff + margem_A) / 5)
-    chance_B = sigmoide((-perf_diff + margem_B) / 5)
+    chance_A = sigmoide((perf_diff + margem_proj_A) / 5)
+    chance_B = sigmoide((-perf_diff + margem_proj_B) / 5)
 
     st.subheader("📌 Resultado da Análise")
     st.markdown(f"""
     - 🏀 Total Time A: **{total_A}** | Total Time B: **{total_B}**  
-    - 📉 Diferença: **{diff:+}**
-    - 📏 Margem A: **{margem_A:+.1f}** | Margem B: **{margem_B:+.1f}**
-    - 📊 Índice A: **{perf_a:.1f}** | Índice B: **{perf_b:.1f}**
+    - 📉 Diferença atual: **{diff:+}** após {quartos_jogados} quarto(s)  
+    - 📈 Diferença projetada final: **{projecao_diff:+.1f}**  
+    - 📏 Margem projetada A: **{margem_proj_A:+.1f}** | B: **{margem_proj_B:+.1f}**  
+    - 📊 Performance A: **{perf_a:.1f}** | B: **{perf_b:.1f}**
     """)
 
     if chance_A > 0.6:
-        st.success(f"✅ Sugestão: Apostar no Time A com handicap {hA:+} (Chance de cobertura: {chance_A*100:.1f}%)")
+        st.success(f"✅ Sugestão: Apostar no Time A com handicap {hA:+} (Chance de cobertura até o fim: {chance_A*100:.1f}%)")
     elif chance_B > 0.6:
-        st.success(f"✅ Sugestão: Apostar no Time B com handicap {hB:+} (Chance de cobertura: {chance_B*100:.1f}%)")
+        st.success(f"✅ Sugestão: Apostar no Time B com handicap {hB:+} (Chance de cobertura até o fim: {chance_B*100:.1f}%)")
     elif 0.5 < chance_A <= 0.6:
         st.warning(f"⚠️ Aposta moderada no Time A ({chance_A*100:.1f}%)")
     elif 0.5 < chance_B <= 0.6:
         st.warning(f"⚠️ Aposta moderada no Time B ({chance_B*100:.1f}%)")
     else:
-        st.error("❌ Nenhum dos times tem boa chance de cobertura. Melhor evitar aposta agora.")
+        st.error("❌ Nenhum dos times tem boa chance de cobertura até o fim. Melhor evitar aposta agora.")
