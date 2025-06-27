@@ -43,19 +43,18 @@ if st.button("🎯 Gerar Sugestão de Aposta"):
         st.error("⚠️ Preencha os handicaps corretamente (ex: -6.5, +6.5).")
         st.stop()
 
-    # Cálculo da margem
-    margem_A = diff - hA if hA < 0 else diff + abs(hA)
-    margem_B = -diff - hB if hB < 0 else -diff + abs(hB)
+    # ✅ Cálculo corrigido da margem real
+    margem_A = (total_A + hA) - total_B
+    margem_B = (total_B + hB) - total_A
 
-    # SUGESTÕES
     if margem_A >= 2:
         sugestao = f"✅ Forte sugestão: Apostar no Time A com handicap {hA:+}"
         margem_info = f"📏 Margem atual: Cobre com {margem_A:.1f} pontos de folga"
-        alerta = f"🚨 Oportunidade identificada: Time A cobre handicap {hA:+} com margem de {margem_A:.1f} pontos."
+        alerta = f"🚨 Time A cobre handicap {hA:+} com margem de {margem_A:.1f} pontos."
     elif margem_B >= 2:
         sugestao = f"✅ Forte sugestão: Apostar no Time B com handicap {hB:+}"
         margem_info = f"📏 Margem atual: Cobre com {margem_B:.1f} pontos de folga"
-        alerta = f"🚨 Oportunidade identificada: Time B cobre handicap {hB:+} com margem de {margem_B:.1f} pontos."
+        alerta = f"🚨 Time B cobre handicap {hB:+} com margem de {margem_B:.1f} pontos."
     elif -1 <= margem_A < 2:
         sugestao = f"⚠️ Sugestão moderada: Apostar com cautela no Time A com handicap {hA:+}"
         margem_info = f"📏 Margem atual: Faltam {abs(margem_A):.1f} pontos para cobrir"
@@ -85,4 +84,3 @@ if st.button("🎯 Gerar Sugestão de Aposta"):
     - {margem_info}
     - {alerta}
     """)
-
